@@ -1,0 +1,10 @@
+G:\编程项目\C#\DiskScanner\DiskScanner\bin\Release\DiskScanner.exe.config
+G:\编程项目\C#\DiskScanner\DiskScanner\bin\Release\DiskScanner.exe
+G:\编程项目\C#\DiskScanner\DiskScanner\bin\Release\DiskScanner.pdb
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.csprojAssemblyReference.cache
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.MainWindow.resources
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.Properties.Resources.resources
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.csproj.GenerateResource.cache
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.csproj.CoreCompileInputs.cache
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.exe
+G:\编程项目\C#\DiskScanner\DiskScanner\obj\Release\DiskScanner.pdb
