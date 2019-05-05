@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using DiskScanner.core;
 using System.Threading;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Diagnostics;
 
 namespace DiskScanner
 {
@@ -18,13 +19,11 @@ namespace DiskScanner
 	{
 		public const string backupPath = "backup.bin";
 
-		private DirectoryDetails dir = null;
+		private DirectoryDetails newDir = null;
 
-		private DirectoryDetails backup_dir = null;
+		private DirectoryDetails backupDir = null;
 
-		private string currentPath = null;
-
-		private string warningMsg = null;
+		private ScanningMsg scanningMsg = null;
 
 		private int interval = 50;
 
@@ -48,8 +47,8 @@ namespace DiskScanner
 			lbBackupData.Text = "正在搜索备份数据...";
 			Task.Run(() =>
 			{
-				backup_dir = LoadData(backupPath);
-				if (backup_dir != null)
+				backupDir = LoadData(backupPath);
+				if (backupDir != null)
 				{
 					lbBackupData.Text = "备份数据已载入";
 				}
@@ -62,9 +61,16 @@ namespace DiskScanner
 
 		private void BtnScan_Click(object sender, EventArgs e)
 		{
+			txtScanningMsg.Text = "";
+			pbScan.Value = 0;
+
 			IsScanning = true;
 
+			scanningMsg = new ScanningMsg();
+
 			mainTimer.Start();
+			Stopwatch watch = new Stopwatch();
+			watch.Start();
 
 			btnScan.Enabled = false;
 			btnSave.Enabled = false;
@@ -72,7 +78,7 @@ namespace DiskScanner
 
 			Task.Run(() =>
 			{
-				dir = DirectoryDetails.AutoScanning("C:\\", ref currentPath, ref warningMsg);
+				newDir = DirectoryDetails.AutoScanning("C:\\", scanningMsg);
 				IsScanning = false;
 
 				Thread.Sleep(interval * 2);
@@ -82,27 +88,30 @@ namespace DiskScanner
 				btnScan.Enabled = true;
 				btnSave.Enabled = true;
 
-				if (backup_dir != null)
+				if (backupDir != null)
 				{
 					btnCompare.Enabled = true;
 				}
 
-				lbMsg.Text = "扫描完成！";
+				watch.Stop();
+
+				pbScan.Value = pbScan.Maximum;
+				lbMsg.Text = string.Format("扫描完成！用时 {0} 秒", watch.Elapsed.TotalSeconds);
 			});
 		}
 
-		private void Compare(DirectoryDetails new_dir, DirectoryDetails backup_dir, long deltaVal)
+		private void Compare(DirectoryDetails newDir, DirectoryDetails backupDir, long deltaVal)
 		{
-			foreach (var dir in new_dir.Subdirectories)
+			foreach (var dir in newDir.Subdirectories)
 			{
 				int index = -1;
-				if ((index = backup_dir.Subdirectories.IndexOf(dir)) != -1)
+				if ((index = backupDir.Subdirectories.IndexOf(dir)) != -1)
 				{
-					if ((dir.Size - backup_dir.Subdirectories[index].Size) > deltaVal)
+					if ((dir.Size - backupDir.Subdirectories[index].Size) > deltaVal)
 					{
-						txtCompareMsg.Text += string.Format("[已存在文件夹(+{0})] {1}\r\n", DirectoryDetails.SizeToString(dir.Size - backup_dir.Subdirectories[index].Size), dir.Path);
+						txtCompareMsg.Text += string.Format("[已存在文件夹(+{0})] {1}\r\n", DirectoryDetails.SizeToString(dir.Size - backupDir.Subdirectories[index].Size), dir.Path);
 
-						Compare(dir, backup_dir.Subdirectories[index], deltaVal);
+						Compare(dir, backupDir.Subdirectories[index], deltaVal);
 					}
 				}
 				else
@@ -112,12 +121,12 @@ namespace DiskScanner
 				}
 			}
 
-			foreach (var file in new_dir.Subfiles)
+			foreach (var file in newDir.Subfiles)
 			{
 				long size = new FileInfo(file).Length;
 
 				int index = -1;
-				if ((index = backup_dir.Subfiles.IndexOf(file)) == -1)
+				if ((index = backupDir.Subfiles.IndexOf(file)) == -1)
 				{
 					if (size > deltaVal)
 						txtCompareMsg.Text += string.Format("[新增文件({0})] {1}\r\n", DirectoryDetails.SizeToString(size), file);
@@ -130,11 +139,11 @@ namespace DiskScanner
 		{
 			txtCompareMsg.Text = "";
 
-			if (dir.Equals(backup_dir))
+			if (newDir.Equals(backupDir))
 			{
 				try
 				{
-					Compare(dir, backup_dir, (long)(Convert.ToDouble(txtDeltaVal.Text) * Math.Pow(1024, 2)));
+					Compare(newDir, backupDir, (long)(Convert.ToDouble(txtDeltaVal.Text) * Math.Pow(1024, 2)));
 
 					txtCompareMsg.Text += "比较完成!";
 				}
@@ -151,7 +160,7 @@ namespace DiskScanner
 
 		private void BtnSave_Click(object sender, EventArgs e)
 		{
-			if (dir != null)
+			if (newDir != null)
 			{
 				try
 				{
@@ -161,8 +170,8 @@ namespace DiskScanner
 					lbBackupData.Text = "正在搜索备份数据...";
 					Task.Run(() =>
 					{
-						backup_dir = LoadData(backupPath);
-						if (backup_dir != null)
+						backupDir = LoadData(backupPath);
+						if (backupDir != null)
 						{
 							lbBackupData.Text = "备份数据已载入";
 						}
@@ -185,8 +194,9 @@ namespace DiskScanner
 
 		private void MainTimer_Tick(object sender, EventArgs e)
 		{
-			txtScanningMsg.Text = warningMsg;
-			lbMsg.Text = "正在扫描: " + currentPath;
+			txtScanningMsg.Text = scanningMsg.WarningMsg;
+			lbMsg.Text = "正在扫描: " + scanningMsg.CurrentScanningPath;
+			pbScan.Value = (int)(scanningMsg.progressVal * 1000000);
 		}
 
 		private DirectoryDetails LoadData(string path)
@@ -222,7 +232,7 @@ namespace DiskScanner
 			try
 			{
 				fs = new FileStream(path, FileMode.Create);
-				bf.Serialize(fs, dir);
+				bf.Serialize(fs, newDir);
 			}
 			catch (Exception e)
 			{
@@ -233,6 +243,14 @@ namespace DiskScanner
 				if (fs != null)
 					fs.Close();
 			}
+		}
+
+		private void BtnUpdateMsg_Click(object sender, EventArgs e)
+		{
+			MessageBox.Show("V1.1.0\r\n" +
+							"在不影响其它工作（甚至游戏）的情况下，使用多线程扫描以提升效率\r\n" +
+							"新增进度条功能\r\n" +
+							"新增“更新日志”以查看各版本的更新内容", "更新日志");
 		}
 	}
 }

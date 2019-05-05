@@ -41,11 +41,13 @@
 			this.label = new System.Windows.Forms.Label();
 			this.txtDeltaVal = new System.Windows.Forms.TextBox();
 			this.label1 = new System.Windows.Forms.Label();
+			this.btnUpdateMsg = new System.Windows.Forms.Button();
+			this.pbScan = new System.Windows.Forms.ProgressBar();
 			this.SuspendLayout();
 			// 
 			// txtScanningMsg
 			// 
-			this.txtScanningMsg.Location = new System.Drawing.Point(12, 25);
+			this.txtScanningMsg.Location = new System.Drawing.Point(12, 51);
 			this.txtScanningMsg.Multiline = true;
 			this.txtScanningMsg.Name = "txtScanningMsg";
 			this.txtScanningMsg.ReadOnly = true;
@@ -55,7 +57,7 @@
 			// 
 			// btnScan
 			// 
-			this.btnScan.Location = new System.Drawing.Point(367, 25);
+			this.btnScan.Location = new System.Drawing.Point(367, 51);
 			this.btnScan.Name = "btnScan";
 			this.btnScan.Size = new System.Drawing.Size(93, 46);
 			this.btnScan.TabIndex = 0;
@@ -70,9 +72,9 @@
 			// 
 			// btnCompare
 			// 
-			this.btnCompare.Location = new System.Drawing.Point(12, 253);
+			this.btnCompare.Location = new System.Drawing.Point(12, 279);
 			this.btnCompare.Name = "btnCompare";
-			this.btnCompare.Size = new System.Drawing.Size(448, 46);
+			this.btnCompare.Size = new System.Drawing.Size(349, 46);
 			this.btnCompare.TabIndex = 1;
 			this.btnCompare.Text = "开始比较";
 			this.btnCompare.UseVisualStyleBackColor = true;
@@ -90,7 +92,7 @@
 			// lbBackupData
 			// 
 			this.lbBackupData.AutoSize = true;
-			this.lbBackupData.Location = new System.Drawing.Point(12, 129);
+			this.lbBackupData.Location = new System.Drawing.Point(12, 155);
 			this.lbBackupData.Name = "lbBackupData";
 			this.lbBackupData.Size = new System.Drawing.Size(104, 17);
 			this.lbBackupData.TabIndex = 0;
@@ -98,7 +100,7 @@
 			// 
 			// btnSave
 			// 
-			this.btnSave.Location = new System.Drawing.Point(367, 77);
+			this.btnSave.Location = new System.Drawing.Point(367, 103);
 			this.btnSave.Name = "btnSave";
 			this.btnSave.Size = new System.Drawing.Size(93, 46);
 			this.btnSave.TabIndex = 2;
@@ -108,7 +110,7 @@
 			// 
 			// txtCompareMsg
 			// 
-			this.txtCompareMsg.Location = new System.Drawing.Point(12, 149);
+			this.txtCompareMsg.Location = new System.Drawing.Point(12, 175);
 			this.txtCompareMsg.Multiline = true;
 			this.txtCompareMsg.Name = "txtCompareMsg";
 			this.txtCompareMsg.ReadOnly = true;
@@ -119,7 +121,7 @@
 			// label
 			// 
 			this.label.AutoSize = true;
-			this.label.Location = new System.Drawing.Point(240, 129);
+			this.label.Location = new System.Drawing.Point(240, 155);
 			this.label.Name = "label";
 			this.label.Size = new System.Drawing.Size(124, 17);
 			this.label.TabIndex = 7;
@@ -128,7 +130,7 @@
 			// txtDeltaVal
 			// 
 			this.txtDeltaVal.Font = new System.Drawing.Font("Microsoft YaHei UI", 6.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-			this.txtDeltaVal.Location = new System.Drawing.Point(367, 127);
+			this.txtDeltaVal.Location = new System.Drawing.Point(367, 153);
 			this.txtDeltaVal.MaxLength = 8;
 			this.txtDeltaVal.Name = "txtDeltaVal";
 			this.txtDeltaVal.Size = new System.Drawing.Size(93, 19);
@@ -139,17 +141,38 @@
 			// label1
 			// 
 			this.label1.AutoSize = true;
-			this.label1.Location = new System.Drawing.Point(281, 302);
+			this.label1.Location = new System.Drawing.Point(158, 328);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(179, 17);
+			this.label1.Size = new System.Drawing.Size(302, 17);
 			this.label1.TabIndex = 9;
-			this.label1.Text = "V1.0.0（开源版）   Author: Vin";
+			this.label1.Text = "Copyright 2019 Fanya Studio    Author: Vin   V1.1.0";
+			// 
+			// btnUpdateMsg
+			// 
+			this.btnUpdateMsg.Location = new System.Drawing.Point(367, 279);
+			this.btnUpdateMsg.Name = "btnUpdateMsg";
+			this.btnUpdateMsg.Size = new System.Drawing.Size(93, 46);
+			this.btnUpdateMsg.TabIndex = 10;
+			this.btnUpdateMsg.Text = "更新日志";
+			this.btnUpdateMsg.UseVisualStyleBackColor = true;
+			this.btnUpdateMsg.Click += new System.EventHandler(this.BtnUpdateMsg_Click);
+			// 
+			// pbScan
+			// 
+			this.pbScan.Location = new System.Drawing.Point(12, 25);
+			this.pbScan.Maximum = 1000000;
+			this.pbScan.Name = "pbScan";
+			this.pbScan.Size = new System.Drawing.Size(448, 20);
+			this.pbScan.Step = 1;
+			this.pbScan.TabIndex = 11;
 			// 
 			// MainWindow
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(472, 323);
+			this.ClientSize = new System.Drawing.Size(472, 348);
+			this.Controls.Add(this.pbScan);
+			this.Controls.Add(this.btnUpdateMsg);
 			this.Controls.Add(this.label1);
 			this.Controls.Add(this.txtDeltaVal);
 			this.Controls.Add(this.label);
@@ -164,6 +187,7 @@
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
 			this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
 			this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+			this.MaximizeBox = false;
 			this.Name = "MainWindow";
 			this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
 			this.Text = "DiskScanner";
@@ -186,6 +210,8 @@
 		private System.Windows.Forms.Label label;
 		private System.Windows.Forms.TextBox txtDeltaVal;
 		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Button btnUpdateMsg;
+		private System.Windows.Forms.ProgressBar pbScan;
 	}
 }
 

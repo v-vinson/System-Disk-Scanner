@@ -11,35 +11,86 @@ namespace DiskScanner.core
 	[Serializable]
 	class DirectoryDetails
 	{
+		public const double MAX_PROGRESS_VAL = 10000.0;
+
 		public string Path { get; set; }
 
 		public long Size { get; set; }
+
+		public double ProgressVal { get; set; }
 
 		public List<DirectoryDetails> Subdirectories { get; set; }
 
 		public List<string> Subfiles { get; set; }
 
-		public static DirectoryDetails AutoScanning(string path, ref string currentPath, ref string warningMsg)
+		private static readonly int processorCount = Environment.ProcessorCount;
+		private static int threadsCount = 0;
+
+		public static string SizeToString(long size)
+		{
+			double d_size = size;
+
+			if (size > Math.Pow(1024, 4))
+			{
+				return (d_size / Math.Pow(1024, 4)).ToString("0.000") + " TB";
+			}
+			else if (size > Math.Pow(1024, 3))
+			{
+				return (d_size / Math.Pow(1024, 3)).ToString("0.000") + " GB";
+			}
+			else if (size > Math.Pow(1024, 2))
+			{
+				return (d_size / Math.Pow(1024, 2)).ToString("0.000") + " MB";
+			}
+			else if (size > 1024)
+			{
+				return (d_size / 1024).ToString("0.000") + " KB";
+			}
+			else
+			{
+				return d_size.ToString("0.00") + " B";
+			}
+		}
+
+		public static DirectoryDetails AutoScanning(string path, ScanningMsg msg)
+		{
+			return AutoScanning(path, msg, MAX_PROGRESS_VAL);
+		}
+
+		private static DirectoryDetails AutoScanning(string path, ScanningMsg msg, double progressVal)
 		{
 			var dd = new DirectoryDetails(path);
+			var taskPool = new List<Task>();
 
-			currentPath = path;
+			msg.CurrentScanningPath = path;
 
-			if (warningMsg == null)
-			{
-				warningMsg = "";
-			}
+			dd.ProgressVal = progressVal;
 
 			try
 			{
 				var subdirectories = Directory.GetDirectories(path);
 				var subfiles = Directory.GetFiles(path);
 
-				if (subdirectories.Length != 0)
+				double eachProgressVal = subdirectories.Length != 0 ? dd.ProgressVal / subdirectories.Length : 0;
+				dd.ProgressVal = subdirectories.Length != 0 ? 0 : dd.ProgressVal;
+
+				foreach (var dir in subdirectories)
 				{
-					foreach (var dir in subdirectories)
+					if (threadsCount < processorCount * 5)
 					{
-						var ddChild = AutoScanning(dir, ref currentPath, ref warningMsg);
+						taskPool.Add(Task.Run(() =>
+						{
+							var ddChild = AutoScanning(dir, msg, eachProgressVal);
+
+							dd.Subdirectories.Add(ddChild);
+							dd.Size += ddChild.Size;
+						}));
+
+						threadsCount++;
+					}
+					else
+					{
+						var ddChild = AutoScanning(dir, msg, eachProgressVal);
 
 						dd.Subdirectories.Add(ddChild);
 						dd.Size += ddChild.Size;
@@ -51,14 +102,22 @@ namespace DiskScanner.core
 					dd.Subfiles.Add(file);
 					dd.Size += new FileInfo(file).Length;
 				}
+
+				// 线程必须全部完成才能结束
+				Task.WaitAll(taskPool.ToArray());
+
+				// 汇报进度
+				msg.progressVal += dd.ProgressVal / 10000;
 			}
 			catch (UnauthorizedAccessException)
 			{
-				warningMsg += ("Unauthoried: " + path + "\r\n");
+				msg.progressVal += dd.ProgressVal / 10000;
+				msg.WarningMsg += ("Unauthoried: " + path + "\r\n");
 			}
 			catch (PathTooLongException)
 			{
-				warningMsg += ("PathTooLong: " + path + "\r\n");
+				msg.progressVal += dd.ProgressVal / 10000;
+				msg.WarningMsg += ("PathTooLong: " + path + "\r\n");
 			}
 			catch (Exception ex)
 			{
@@ -68,41 +127,15 @@ namespace DiskScanner.core
 			return dd;
 		}
 
-		public static string SizeToString(long size)
-		{
-			double d_size = size;
-
-			if (size > Math.Pow(1024, 4))
-			{
-				return (d_size / Math.Pow(1024, 4)).ToString() + " TB";
-			}
-			else if (size > Math.Pow(1024, 3))
-			{
-				return (d_size / Math.Pow(1024, 3)).ToString() + " GB";
-			}
-			else if (size > Math.Pow(1024, 2))
-			{
-				return (d_size / Math.Pow(1024, 2)).ToString() + " MB";
-			}
-			else if (size > 1024)
-			{
-				return (d_size / 1024).ToString() + " KB";
-			}
-			else
-			{
-				return d_size.ToString() + " B";
-			}
-		}
-
 		public DirectoryDetails(string path, bool autoScanning = false)
 		{
 			Path = path;
+			ProgressVal = 0;
 
 			if (autoScanning)
 			{
-				string currentPath = null;
-				string warningMsg = null;
-				var dd = AutoScanning(path, ref currentPath, ref warningMsg);
+				var scanningMsg = new ScanningMsg();
+				var dd = AutoScanning(path, scanningMsg);
 
 				Size = dd.Size;
 				Subdirectories = dd.Subdirectories;
